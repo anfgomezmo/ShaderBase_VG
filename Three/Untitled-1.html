@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - materials - shaders [game-of-life]</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				color: #ffffff;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+				font-weight: bold;
+
+				background-color: #000000;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				padding: 5px;
+			}
+
+			a {
+
+				color: #ffffff;
+			}
+
+			#oldie a { color:#da0 }
+		</style>
+	</head>
+	<body>
+
+		<div id="container"></div>
+		<div id="info"><a href="http://github.com/mrdoob/three.js" target="_blank">three.js</a> - shader demo - game-of-life</div>
+
+		<script src="js/ThreeLife.js"></script>
+
+		<script src="js/ShaderExtras.js"></script>
+
+		<script src="js/Detector.js"></script>
+		<script src="js/Stats.js"></script>
+
+		<script id="vertexShader" type="x-shader/x-vertex">
+
+			void main()	{
+
+				gl_Position = vec4( position, 1.0 );
+
+			}
+
+		</script>
+
+		<script id="fragmentShader" type="x-shader/x-fragment">
+
+			uniform float time;
+			uniform vec2 mouse;
+			uniform vec2 resolution;
+			uniform sampler2D backbuffer;
+
+			void main( void ) {
+
+				vec2 position = gl_FragCoord.xy / resolution.xy;
+				float aspect = resolution.x/resolution.y;
+
+				vec2 d = ( mouse - position ) * vec2( aspect, 1.0 );
+				vec2 d2 = ( mouse + 0.1 * vec2( sin(time * 2.0), aspect * cos(time * 2.0) ) - position ) * vec2( aspect, 1.0 );
+				float c = 0.015 * abs(sin( 0.5 * time )) + 0.01;
+
+
+				if ( ( length( d ) < c && ( length( d ) > 0.9 *c ) ) ) {
+
+					gl_FragColor = vec4( vec3( 1.0, position.x, 0.0 ), 1.0 );
+
+				} else if ( ( length( d2 ) < c * 0.25 ) ) {
+
+					gl_FragColor = vec4( vec3(1.0, 1.0, 0.0 ), 1.0 );
+
+				} else {
+
+					const float m = 1.0;
+					float dx = 1.0/resolution.x;
+					float dy = dx * aspect;
+					vec4 v0 = texture2D( backbuffer, position );
+					vec4 v1 = texture2D( backbuffer, mod ( position + vec2( 0.0, dy ), m ) );
+					vec4 v2 = texture2D( backbuffer, mod ( position + vec2( dx, 0.0 ), m ) );
+					vec4 v3 = texture2D( backbuffer, mod ( position + vec2( 0.0, -dy ), m ) );
+					vec4 v4 = texture2D( backbuffer, mod ( position + vec2( -dx, 0.0 ), m ) );
+					vec4 v5 = texture2D( backbuffer, mod ( position + vec2( dx, dy ), m ) );
+					vec4 v6 = texture2D( backbuffer, mod ( position + vec2( -dx, -dy ), m ) );
+					vec4 v7 = texture2D( backbuffer, mod ( position + vec2( dx, -dy ), m ) );
+					vec4 v8 = texture2D( backbuffer, mod ( position + vec2( -dx, dy ), m ) );
+
+					vec4 s = v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8;
+
+					// live cell
+
+					if ( v0.w > 0.0 ) {
+
+						if ( s.w < 2.0 || s.w > 3.0 )
+							gl_FragColor = vec4( 0.0, 0.95, 0.0, 0.0 );
+						else
+							gl_FragColor = vec4( 0.0, position.x, 0.5, 1.0 );
+
+					// dead cell
+
+					} else {
+
+						if ( s.w == 3.0 )
+							gl_FragColor = vec4( 0.0, 0.85, position.y, 1.0 );
+					}
+
+				}
+
+			}
+
+		</script>
+
+		<script>
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var container, stats;
+
+			var camera, scene, renderer;
+
+			var uniformsShader, uniformsScreen, materialShader, materialScreen, mesh;
+
+			var backbuffer, frontbuffer, tmp;
+
+			var mouseX = 0, mouseY = 0,
+			lat = 0, lon = 0, phy = 0, theta = 0;
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+			init();
+			animate();
+
+			function init() {
+
+				container = document.getElementById( 'container' );
+
+				sceneScreen = new THREE.Scene();
+				sceneShader = new THREE.Scene();
+
+				camera = new THREE.Camera();
+				camera.position.z = 1;
+				sceneShader.add( camera );
+
+				pars = { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, format: THREE.RGBAFormat };
+
+				frontbuffer = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, pars );
+				backbuffer = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, pars );
+
+				uniformsShader = {
+
+					time: { type: "f", value: 1.0 },
+					resolution: { type: "v2", value: new THREE.Vector2() },
+					mouse: { type: "v2", value: new THREE.Vector2() },
+					backbuffer: { type: "t", value: 0, texture: backbuffer }
+
+				};
+
+				uniformsShader.backbuffer.texture = backbuffer;
+
+				materialShader = new THREE.ShaderMaterial( {
+
+					uniforms: uniformsShader,
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+
+				} );
+
+				mesh = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), materialShader );
+				sceneShader.add( mesh );
+
+				//
+
+				var shader = THREE.ShaderExtras[ "screen" ];
+				uniformsScreen = THREE.UniformsUtils.clone( shader.uniforms );
+
+				uniformsScreen.tDiffuse.texture = frontbuffer;
+
+				materialScreen = new THREE.ShaderMaterial( {
+
+					uniforms: uniformsScreen,
+					vertexShader: document.getElementById( 'vertexShader' ).textContent,
+					fragmentShader: document.getElementById( 'fragmentShader' ).textContent
+
+				} );
+
+				mesh = new THREE.Mesh( new THREE.PlaneGeometry( 2, 2 ), materialScreen );
+				sceneScreen.add( mesh );
+
+				//
+
+				renderer = new THREE.WebGLRenderer( { antialias: false } );
+				container.appendChild( renderer.domElement );
+
+				stats = new Stats();
+				stats.domElement.style.position = 'absolute';
+				stats.domElement.style.top = '0px';
+				container.appendChild( stats.domElement );
+
+				stats.domElement.children[ 0 ].children[ 0 ].style.color = "#aaa";
+				stats.domElement.children[ 0 ].style.background = "transparent";
+				stats.domElement.children[ 0 ].children[ 1 ].style.display = "none";
+
+				//
+
+				onWindowResize();
+
+				window.addEventListener( 'resize', onWindowResize, false );
+				window.addEventListener( 'mousemove', onMouseMove, false );
+
+			}
+
+			function onWindowResize( event ) {
+
+				uniformsShader.resolution.value.x = window.innerWidth;
+				uniformsShader.resolution.value.y = window.innerHeight;
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				buffer1 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, pars );
+				buffer2 = new THREE.WebGLRenderTarget( window.innerWidth, window.innerHeight, pars );
+
+				frontbuffer = buffer1;
+				backbuffer = buffer2;
+
+				uniformsShader.backbuffer.texture = backbuffer;
+
+			}
+
+			function onMouseMove( event ) {
+
+				var x = event.clientX / window.innerWidth;
+				var y = 1 - event.clientY / window.innerHeight;
+
+				uniformsShader.mouse.value.set( x, y );
+
+			}
+
+			//
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+				stats.update();
+
+			}
+
+			function render() {
+
+				uniformsShader.time.value += 0.05;
+				uniformsShader.backbuffer.texture = backbuffer;
+
+				uniformsScreen.tDiffuse.texture = frontbuffer;
+
+				renderer.render( sceneShader, camera, frontbuffer );
+				renderer.render( sceneScreen, camera );
+
+				tmp = frontbuffer;
+				frontbuffer = backbuffer;
+				backbuffer = tmp;
+
+			}
+
+		</script>
+
+	</body>
+</html>
