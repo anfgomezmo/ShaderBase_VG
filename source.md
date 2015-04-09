@@ -19,7 +19,6 @@ Slide:
 # ShaderBase
 ##Introducción
 
-Andrés Felipe Gómez
 
 Slide:
 #Nombre
@@ -40,15 +39,6 @@ Slide:
 2. Un desarrollador busca resolver un problema.
 3. Distribución: Usuario - Desarrollador
 4. Resolver un problema llamativo para un usuario
-
-Subslide:
-
-#Desarrollo Videojuego
-1. Definición concepto: Idea, Audiencia, Historia, etc
-2. Preproducción
-3. Prototipo
-4. Producción
-5. Versión Alfa, Beta, Gold
 
 Slide:
 
@@ -81,21 +71,6 @@ Pixar Renderman 1989
 
 Subslide:
 
-<img height="650" src="fig/5e.jpg">
-
-Subslide:
-
-##Lenguajes de Shaders
-* HLSL
-* GLSL
-* CG
-
-Subslide:
-
-<img height="650" src="fig/5e1.jpg">
-
-Subslide:
-
 #Uso de Shaders
 1. Efectos
 2. Filtros
@@ -112,11 +87,15 @@ Subslide:
  
 Subslide:
  
- <img height="300" src="fig/14e.jpg">
+ <img height="500" src="fig/14e.jpg">
 
 Subslide:
  
- <img height="300" src="fig/15e.jpg">
+ <img height="500" src="fig/15e.jpg">
+
+Subslide:
+ 
+ <img height="500" src="fig/19e.jpg">
  
  
 Slide:
@@ -142,6 +121,7 @@ Subslide:
 * La mayoría de los programas actuales usan shaders.
 * ¿Programas y/o librerías con código abierto?
 
+
 Subslide:
 
 ## Bases de datos y/o aplicaciones que cataloguen shaders
@@ -150,6 +130,9 @@ Subslide:
 * [NVDIA](http://www.nvidia.com/shaderlibrary)
 * [Yafaray](http://yafaray.thomasbaron.net/)
 
+Subslide:
+
+<img height="700" src="fig/20e.jpg">
 
 Slide:
 ##Objetivo
@@ -257,7 +240,7 @@ Subslide:
 
 <img height="500" src="fig/12e.jpg">
 
-* [ShaderTool](https://github.com/remixlab/shaderdb)
+* [ShaderBase](https://github.com/shadertool/shaderdb)
 
 Slide:
 
@@ -275,7 +258,7 @@ Subslide:
 * [GPL](http://www.gnu.org/licenses/licenses.es.html)
 - [Creative Commons](https://creativecommons.org/choose/)
 - MIT
-- [Patentes (Problema?)](http://webshop.ffii.org/)
+
 
 
 Slide:
